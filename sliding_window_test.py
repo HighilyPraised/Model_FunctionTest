@@ -148,6 +148,7 @@ if __name__ == '__main__':
 
 
         # 对图片进行处理
+
         final_img = Adaptive_SlidingWindow(input_image, 512, 0.5)
         # 保存新图像
         reslotion = str(width) + 'x' + str(height)
