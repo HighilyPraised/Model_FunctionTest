@@ -70,29 +70,78 @@ def SlidingWindow(img,new_width, new_height):
 def Adaptive_SlidingWindow(image, window_size,overlap):
     # 获取图片的宽度和高度
     width, height = image.size
-    final_img = Image.new('RGB', (width, height))
+    #final_img = Image.new('RGB', (width, height))
     base_step_size = int(window_size * (1 - overlap))# 计算基本步长，使得窗口之间有重叠
     step_size_x = (width - window_size) // ((width - window_size) // base_step_size)# 计算实际步长，使得窗口始终充满图像内容
     step_size_y = (height - window_size) // ((height - window_size) // base_step_size)
+    line_img = []
+    full_img = []
     # 滑动窗口
     for y in range(0, height - window_size + 1, step_size_y):
         for x in range(0, width - window_size + 1, step_size_x):
             # 切割图片
             window = image.crop((x, y, x + window_size, y + window_size))
             prosedded_img = Process_image(window, model)
-            final_img.paste(prosedded_img, (x, y))
-            # if x == 0 and y == 0:
-            #     final_img.paste(prosedded_img, (x, y))
-            # else:
-            #     existing_image = final_img.crop((x, y, x + window_size, y + window_size))
-            #     existing_image_np = np.array(existing_image)
-            #     prosedded_img_np = np.array(prosedded_img)
-            #     mask = (existing_image_np == 0)
-            #     existing_image_np[mask] = prosedded_img_np[mask]
-            #     existing_image = Image.fromarray(existing_image_np, 'RGB')
-            #     blended_window = blend_images(existing_image, prosedded_img_np, 'Weighted')
-            #     final_img.paste(blended_window, (x, y))
-    return final_img
+            # prosedded_img.save(Cache_Root + str(x) + str(y) + '_img.jpg')
+            if len(line_img) == 0:
+                line_img.append(prosedded_img)
+            else:
+                blended_img = blend_images_Columns(line_img.pop(), prosedded_img, int(((window_size-step_size_x)/window_size)*256))
+                line_img.append(blended_img)
+            if x + step_size_x > width - window_size :
+                # img = line_img.pop()
+                # img.save(Cache_Root + str(y) + '_line_img.jpg')
+                if len(full_img) == 0:
+                    full_img.append(line_img.pop())
+                else:
+                    #full_img.append(line_img.pop())
+                    blended_img = blend_images_Rows(full_img.pop(), line_img.pop(), int(((window_size-step_size_y)/window_size) * 256))
+                    full_img.append(blended_img)
+            #final_img.paste(prosedded_img, (x, y))
+    # for i in range(0, len(full_img)):
+    #     full_img[i].save(Cache_Root + str(i) + '_line_img.jpg')
+    return full_img.pop()
+
+def blend_images_Columns(image_L, image_R, overlap):
+    # OpenCV默认使用BGR色彩空间，所以我们需要从RGB转换为BGR
+    image_L = cv2.cvtColor(np.array(image_L), cv2.COLOR_RGB2BGR)
+    image_R = cv2.cvtColor(np.array(image_R), cv2.COLOR_RGB2BGR)
+    # 定义重叠区域的宽度
+    # overlap = 128
+    # 分割图片
+    left = image_L[:, :image_L.shape[1] - overlap]
+    right = image_R[:, overlap:]
+    # 创建混合区域
+    blend1 = image_L[:, image_L.shape[1] - overlap:]
+    blend2 = image_R[:, :overlap]
+    # 计算加权平均值
+    blended = np.zeros_like(blend1)
+    for i in range(overlap):
+        alpha = i / overlap
+        blended[:, i] = cv2.addWeighted(blend1[:, i], 1 - alpha, blend2[:, i], alpha, 0)
+    # 拼接图片
+    result = np.hstack((left, blended, right))
+    return Image.fromarray(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
+def blend_images_Rows(image_T, image_B, overlap):
+    # OpenCV默认使用BGR色彩空间，所以我们需要从RGB转换为BGR
+    image_T = cv2.cvtColor(np.array(image_T), cv2.COLOR_RGB2BGR)
+    image_B = cv2.cvtColor(np.array(image_B), cv2.COLOR_RGB2BGR)
+    # 定义重叠区域的高度
+    # overlap = 128
+    # 分割图片
+    top = image_T[:image_T.shape[0] - overlap, :]
+    bottom = image_B[overlap:, :]
+    # 创建混合区域
+    blend1 = image_T[image_T.shape[0] - overlap:, :]
+    blend2 = image_B[:overlap, :]
+    # 计算加权平均值
+    blended = np.zeros_like(blend1)
+    for i in range(overlap):
+        alpha = i / overlap
+        blended[i, :] = cv2.addWeighted(blend1[i, :], 1 - alpha, blend2[i, :], alpha, 0)
+    # 拼接图片
+    result = np.vstack((top, blended, bottom))
+    return Image.fromarray(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
 
 def blend_images(image1, image2, blend_factor):# 定义图像融合函数
     # 将PIL图像转换为numpy数组以进行计算
@@ -103,9 +152,7 @@ def blend_images(image1, image2, blend_factor):# 定义图像融合函数
             return Image.blend(image1, image2, alpha=0.3)
         case 'Weighted':# 加权融合
             height, width, _ = image1_array.shape
-            # 找出image1中的黑色部分
             mask = (image1_array == 0)
-            # 从image2中选择像素，并复制到image1的对应位置
             image1_array[mask]=image2_array[mask]
             # 创建权重矩阵
             weights1 = np.zeros((height, width))
@@ -136,7 +183,7 @@ if __name__ == '__main__':
     model.eval()
     #加载图片文件
     #Image_Names = os.listdir(Image_Root)
-    Image_Name = 'x8pjml_1920x1080.jpg'
+    Image_Name = '6oxgp6_1920x1080.jpg'
     Image_Path = Image_Root + Image_Name
     input_image = Image.open(Image_Path)
     if Split_mode:
@@ -145,11 +192,9 @@ if __name__ == '__main__':
         # 计算需要填充的宽度和高度
         # new_width = (width + 255) // 256 * 256
         # new_height = (height + 255) // 256 * 256
-
-
         # 对图片进行处理
-
-        final_img = Adaptive_SlidingWindow(input_image, 512, 0.5)
+        final_img = Adaptive_SlidingWindow(input_image, 512, 0.8)
+        width, height = final_img.size
         # 保存新图像
         reslotion = str(width) + 'x' + str(height)
         file_name = Output_Root+time.strftime('%m%d%H%M%S_',time.localtime(time.time()))+reslotion+'.jpg'
