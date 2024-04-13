@@ -1,3 +1,9 @@
+Model_Path = './trained/pretrained_model.pth'模型路径
+Image_Root = './images/'存放测试图片的路径
+Cache_Root = './cache/'缓存路径
+Output_Root = './output/'模型输出的风格化图像的路径
+请确保这四个路径存在
+
 main.py 用于测试模型的基础功能，即输入任意尺寸图片，输出风格化图片，目前功能已完善
 GUI.py pyQt5搭建的图形界面，仍需修改
 Model.py 模型功能文件
