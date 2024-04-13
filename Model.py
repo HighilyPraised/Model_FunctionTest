@@ -95,6 +95,7 @@ class StyleTransferModel:
         line_img = []
         full_img = []
         # 滑动窗口
+        i=0
         for y in range(0, height - window_size + 1, step_size_y):
             for x in range(0, width - window_size + 1, step_size_x):
                 # 切割图片
@@ -103,9 +104,13 @@ class StyleTransferModel:
                 # prosedded_img.save(Cache_Root + str(x) + str(y) + '_img.jpg')
                 if len(line_img) == 0:
                     line_img.append(prosedded_img)
+                    i+=1
                 else:
                     blended_img = self.blend_images_Columns(line_img.pop(), prosedded_img,int(((window_size - step_size_x) / window_size) * 256))
                     line_img.append(blended_img)
+                    i+=1
+                value = int((i/float(totle_img_count)*100))
+                self.app.setProgress(value)
                 if x + step_size_x > width - window_size:
                     # img = line_img.pop()
                     # img.save(Cache_Root + str(y) + '_line_img.jpg')
@@ -121,10 +126,10 @@ class StyleTransferModel:
         return full_img.pop()
 
     def style_transfer(self, input_image_path, output_image_path):
+
         # 读取图片
         input_image = Image.open(input_image_path)
         # 更新进度条的值
-        self.app.setProgress(50)
         # 使用你的模型进行风格转换
         output_image = self.Adaptive_SlidingWindow(input_image, 512, 0.5)
         # # 这里只是一个示例，你需要替换成自己的代码
