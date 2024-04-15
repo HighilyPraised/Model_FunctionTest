@@ -3,6 +3,7 @@ from PIL import Image
 import cv2
 import numpy as np
 from torchvision import transforms
+from PyQt5.QtCore import Qt
 
 Model_Path = './trained/pretrained_model.pth'
 Image_Root = './images/'
@@ -136,5 +137,6 @@ class StyleTransferModel:
         # output_image = input_image
         # 更新进度条的值
         self.app.setProgress(100)
+        self.app.progress.setDisabled(True)
         # 保存输出图片
         output_image.save(output_image_path)
