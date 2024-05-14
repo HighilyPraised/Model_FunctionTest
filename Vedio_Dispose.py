@@ -171,7 +171,6 @@ if __name__ == '__main__':
     out = cv2.VideoWriter('./output/output.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 24, (output_width, output_height))
     i =0
     for i in range(0,len(imgs)):
-        # 在此处处理帧，例如：将帧转换为灰度图像
         input_image = Image.fromarray(cv2.cvtColor(imgs[i], cv2.COLOR_BGR2RGB).astype(np.uint8))
         # input_image.save('./cache/frame_{}.jpg'.format(i))
         print('prossing_image : {}/{}'.format(i, len(imgs)), )
