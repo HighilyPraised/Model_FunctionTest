@@ -10,6 +10,8 @@ Split_mode = True
 
 Model_Path = './trained/pretrained_model.pth'
 Image_Root = './images/'
+Cache_Root_window = './cache/window/'
+Cache_Root_prosessed = './cache/prosessed/'
 Cache_Root = './cache/'
 Output_Root = './output/'
 
@@ -21,6 +23,7 @@ def Process_image(img,model):
     ])
     # 加载输入图片
     input_image = img.resize((256, 256)).convert('RGB')
+    #input_image.save(Output_Root+'256x25622.jpg')
     input_tensor = transform(input_image)
     # 添加batch维度
     input_batch = input_tensor.unsqueeze(0)
@@ -81,12 +84,14 @@ def Adaptive_SlidingWindow(image, window_size,overlap):
         for x in range(0, width - window_size + 1, step_size_x):
             # 切割图片
             window = image.crop((x, y, x + window_size, y + window_size))
+            window.save(Cache_Root_window + str(y) +'_'+ str(x) + '_windowimg.png')
             prosedded_img = Process_image(window, model)
-            # prosedded_img.save(Cache_Root + str(x) + str(y) + '_img.jpg')
+            prosedded_img.save(Cache_Root_prosessed + str(y) +'_'+ str(x) + '_proseddedimg.png')
             if len(line_img) == 0:
                 line_img.append(prosedded_img)
             else:
                 blended_img = blend_images_Columns(line_img.pop(), prosedded_img, int(((window_size-step_size_x)/window_size)*256))
+                blended_img.save(Cache_Root + str(y) +'_'+ str(x) + '_blended_lineimg.png')
                 line_img.append(blended_img)
             if x + step_size_x > width - window_size :
                 # img = line_img.pop()
@@ -96,6 +101,7 @@ def Adaptive_SlidingWindow(image, window_size,overlap):
                 else:
                     #full_img.append(line_img.pop())
                     blended_img = blend_images_Rows(full_img.pop(), line_img.pop(), int(((window_size-step_size_y)/window_size) * 256))
+                    blended_img.save(Cache_Root + str(y) +'_'+ str(x) + '_blended_rowimg.png')
                     full_img.append(blended_img)
             #final_img.paste(prosedded_img, (x, y))
     # for i in range(0, len(full_img)):
@@ -103,11 +109,9 @@ def Adaptive_SlidingWindow(image, window_size,overlap):
     return full_img.pop()
 
 def blend_images_Columns(image_L, image_R, overlap):
-    # OpenCV默认使用BGR色彩空间，所以我们需要从RGB转换为BGR
+    # 从RGB转换为BGR
     image_L = cv2.cvtColor(np.array(image_L), cv2.COLOR_RGB2BGR)
     image_R = cv2.cvtColor(np.array(image_R), cv2.COLOR_RGB2BGR)
-    # 定义重叠区域的宽度
-    # overlap = 128
     # 分割图片
     left = image_L[:, :image_L.shape[1] - overlap]
     right = image_R[:, overlap:]
@@ -183,7 +187,7 @@ if __name__ == '__main__':
     model.eval()
     #加载图片文件
     #Image_Names = os.listdir(Image_Root)
-    Image_Name = 'frame_41.jpg'
+    Image_Name = '0qp13l_1920x1080.jpg'
     Image_Path = Image_Root + Image_Name
     input_image = Image.open(Image_Path)
     if Split_mode:
@@ -193,7 +197,7 @@ if __name__ == '__main__':
         # new_width = (width + 255) // 256 * 256
         # new_height = (height + 255) // 256 * 256
         # 对图片进行处理
-        final_img = Adaptive_SlidingWindow(input_image, 512, 0.5)
+        final_img = Adaptive_SlidingWindow(input_image, 256, 0.5)
         width, height = final_img.size
         # 保存新图像
         reslotion = str(width) + 'x' + str(height)
@@ -202,7 +206,10 @@ if __name__ == '__main__':
         print('Image saved: '+file_name)
     else:
         output_image = Process_image(input_image,model)
-        file_name = Output_Root + time.strftime('%m%d%H%M%S_', time.localtime(time.time())) + '256x256.jpg'
-        # 使用OpenCV保存图像
-        cv2.imwrite(file_name,cv2.cvtColor(output_image, cv2.COLOR_RGB2BGR))
+        width, height = output_image.size
+        # 保存新图像
+        reslotion = str(width) + 'x' + str(height)
+        file_name = Output_Root + time.strftime('%m%d%H%M%S_', time.localtime(time.time())) + reslotion + '.jpg'
+        output_image.save(file_name)
+        print('Image saved: ' + file_name)
 

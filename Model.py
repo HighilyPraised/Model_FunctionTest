@@ -11,7 +11,7 @@ Cache_Root = './cache/'
 Output_Root = './output/'
 
 class StyleTransferModel:
-    def __init__(self, app):
+    def __init__(self, app, win_size, overlap):
         # 保存App类的实例
         self.app = app
         # 加载.pth模型文件
@@ -19,6 +19,8 @@ class StyleTransferModel:
         self.model.eval()
         # self.model = torch.hub.load('pytorch/vision:v0.9.0', 'style_transfer', pretrained=True)
         # self.model.eval()
+        self.win_size = win_size
+        self.overlap = overlap
 
     def Process_image(self,img):
         # 定义转换函数，将输入图片转换为模型所需的格式
@@ -132,11 +134,11 @@ class StyleTransferModel:
         input_image = Image.open(input_image_path)
         # 更新进度条的值
         # 使用你的模型进行风格转换
-        output_image = self.Adaptive_SlidingWindow(input_image, 512, 0.5)
+        output_image = self.Adaptive_SlidingWindow(input_image, self.win_size, self.overlap)
         # # 这里只是一个示例，你需要替换成自己的代码
         # output_image = input_image
+        # 保存输出图片
+        output_image.save(output_image_path)
         # 更新进度条的值
         self.app.setProgress(100)
         self.app.progress.setDisabled(True)
-        # 保存输出图片
-        output_image.save(output_image_path)

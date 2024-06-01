@@ -175,7 +175,8 @@ if __name__ == '__main__':
         input_image = Image.fromarray(cv2.cvtColor(imgs[i], cv2.COLOR_BGR2RGB).astype(np.uint8))
         # input_image.save('./cache/frame_{}.jpg'.format(i))
         print('prossing_image : {}/{}'.format(i, len(imgs)), )
-        output_img = Adaptive_SlidingWindow(input_image, 512, 0.5)
+        #output_img = Adaptive_SlidingWindow(input_image, 512, 0.5)
+        output_img = Process_image(img,model)
         output_img = cv2.cvtColor(np.array(output_img), cv2.COLOR_RGB2BGR)
         # 写入处理后的帧
         out.write(output_img)
